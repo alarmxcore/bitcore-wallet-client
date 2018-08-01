@@ -1,8 +1,8 @@
 # bitcore-wallet-client-alarmx
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-client-alarmx.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-client-alarmx)
-[![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client-alarmx.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client-alarmx)
-[![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client-alarmx/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client-alarmx)
+[![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-client)
+[![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client)
+[![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client)
 
 The *official* client library for [bitcore-wallet-service-alarmx](https://github.com/alarmxcore/bitcore-wallet-service-alarmx).
 
