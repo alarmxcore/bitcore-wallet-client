@@ -6,12 +6,12 @@
   "authors": ["BitPay Inc"],
   "description": "Client for bitcore-wallet-service-alarmx",
   "keywords": [
-    "bitcoin",
-    "copay",
+    "alarmx",
+    "copay-alarmx",
     "multisig",
     "wallet",
     "client",
-    "bitcore"
+    "bitcore-alarmx"
   ],
   "ignore": [
     "**/.*",

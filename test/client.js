@@ -9,7 +9,6 @@ var should = chai.should();
 var async = require('async');
 var request = require('supertest');
 var Uuid = require('uuid');
-var sjcl = require('sjcl');
 var tingodb = require('tingodb')({
   memStore: true
 });
@@ -80,25 +79,33 @@ helpers.newDb = function() {
   return new tingodb.Db('./db/test' + this.dbCounter, {});
 };
 
-helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignatures, amounts) {
+helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignatures, amounts, coin) {
   var amounts = [].concat(amounts);
+  var coin = coin || 'btc';
+
+  if (coin == 'bch') {
+    var bitcore = Bitcore_.bch;
+  } else {
+    var bitcore = Bitcore;
+  }
+
   var utxos = _.map(amounts, function(amount, i) {
 
-    var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
+    var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet', coin);
 
     var scriptPubKey;
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        scriptPubKey = Bitcore.Script.buildMultisigOut(address.publicKeys, requiredSignatures).toScriptHashOut();
+        scriptPubKey = bitcore.Script.buildMultisigOut(address.publicKeys, requiredSignatures).toScriptHashOut();
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
-        scriptPubKey = Bitcore.Script.buildPublicKeyHashOut(address.address);
+        scriptPubKey = bitcore.Script.buildPublicKeyHashOut(address.address);
         break;
     }
     should.exist(scriptPubKey);
 
     var obj = {
-      txid: Bitcore.crypto.Hash.sha256(new Buffer(i)).toString('hex'),
+      txid: bitcore.crypto.Hash.sha256(new Buffer(i)).toString('hex'),
       vout: 100,
       satoshis: helpers.toSatoshi(amount),
       scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
@@ -498,8 +505,8 @@ describe('client API', function() {
 
     describe('#buildTx', function() {
       it('Raw tx roundtrip', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -510,7 +517,7 @@ describe('client API', function() {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress,
-          amount: 1200,
+          "amount": 5460,
           changeAddress: {
             address: changeAddress
           },
@@ -528,11 +535,11 @@ describe('client API', function() {
         var t2 = new Bitcore.Transaction(t);
         t2.inputs.length.should.equal(2);
         t2.outputs.length.should.equal(2);
-        t2.outputs[0].satoshis.should.equal(1200);
+        t2.outputs[0].satoshis.should.equal(5460);
       });
       it('should build a tx correctly (BIP44)', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -543,7 +550,7 @@ describe('client API', function() {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress,
-          amount: 1200,
+          "amount": 5460,
           changeAddress: {
             address: changeAddress
           },
@@ -564,8 +571,8 @@ describe('client API', function() {
         t.getFee().should.equal(10050);
       });
       it('should build a tx correctly (BIP48)', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP48']),
@@ -576,7 +583,7 @@ describe('client API', function() {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress,
-          amount: 1200,
+          "amount": 5460,
           changeAddress: {
             address: changeAddress
           },
@@ -597,8 +604,8 @@ describe('client API', function() {
         t.getFee().should.equal(10050);
       });
       it('should protect from creating excessive fee', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -640,8 +647,8 @@ describe('client API', function() {
         Utils.newBitcoreTransaction = x;
       });
       it('should build a tx with multiple outputs', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -652,11 +659,11 @@ describe('client API', function() {
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
-            amount: 800,
+            amount: 8000,
             message: 'first output'
           }, {
             toAddress: toAddress,
-            amount: 900,
+            amount: 9000,
             message: 'second output'
           }],
           changeAddress: {
@@ -675,8 +682,8 @@ describe('client API', function() {
         should.not.exist(bitcoreError);
       });
       it('should build a tx with provided output scripts', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -687,11 +694,11 @@ describe('client API', function() {
           inputs: utxos,
           type: 'external',
           outputs: [{
-            "toAddress": "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E",
-            "amount": 700,
+            "toAddress": "yVnNAcuJ2qJHA1X2femwK1uWb4En2v9Qx7",
+            "amount": 7000,
             "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
           }, {
-            "amount": 600,
+            "amount": 6000,
             "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
           }, {
             "amount": 0,
@@ -722,8 +729,8 @@ describe('client API', function() {
         t.outputs[3].script.toHex().should.equal(changeScript);
       });
       it('should fail if provided output has no either toAddress or script', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -734,9 +741,9 @@ describe('client API', function() {
           inputs: utxos,
           type: 'external',
           outputs: [{
-            "amount": 700,
+            "amount": 7000,
           }, {
-            "amount": 600,
+            "amount": 6000,
             "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
           }, {
             "amount": 0,
@@ -755,7 +762,7 @@ describe('client API', function() {
           var t = Utils.buildTx(txp);
         }).should.throw('Output should have either toAddress or script specified');
 
-        txp.outputs[0].toAddress = "18433T2TSgajt9jWhcTBw4GoNREA6LpX3E";
+        txp.outputs[0].toAddress = "yVnNAcuJ2qJHA1X2femwK1uWb4En2v9Qx7";
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
@@ -771,8 +778,8 @@ describe('client API', function() {
         should.not.exist(bitcoreError);
       });
       it('should build a v3 tx proposal', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -784,11 +791,11 @@ describe('client API', function() {
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
-            amount: 800,
+            amount: 8000,
             message: 'first output'
           }, {
             toAddress: toAddress,
-            amount: 900,
+            amount: 9000,
             message: 'second output'
           }],
           changeAddress: {
@@ -810,8 +817,8 @@ describe('client API', function() {
 
     describe('#signTxp', function() {
       it('should sign BIP45 P2SH correctly', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP45']),
@@ -821,7 +828,7 @@ describe('client API', function() {
         var txp = {
           inputs: utxos,
           toAddress: toAddress,
-          amount: 1200,
+          "amount": 5460,
           changeAddress: {
             address: changeAddress
           },
@@ -835,8 +842,8 @@ describe('client API', function() {
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign BIP44 P2PKH correctly', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -846,7 +853,7 @@ describe('client API', function() {
         var txp = {
           inputs: utxos,
           toAddress: toAddress,
-          amount: 1200,
+          "amount": 5460,
           changeAddress: {
             address: changeAddress
           },
@@ -860,8 +867,8 @@ describe('client API', function() {
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign multiple-outputs proposal correctly', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -872,11 +879,11 @@ describe('client API', function() {
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
-            amount: 800,
+            amount: 8000,
             message: 'first output'
           }, {
             toAddress: toAddress,
-            amount: 900,
+            amount: 9000,
             message: 'second output'
           }],
           changeAddress: {
@@ -892,8 +899,8 @@ describe('client API', function() {
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign proposal with provided output scripts correctly', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
@@ -904,10 +911,10 @@ describe('client API', function() {
           inputs: utxos,
           type: 'external',
           outputs: [{
-            "amount": 700,
+            "amount": 7000,
             "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
           }, {
-            "amount": 600,
+            "amount": 6000,
             "script": "76a9144d5bd54809f846dc6b1a14cbdd0ac87a3c66f76688ac"
           }, {
             "amount": 0,
@@ -926,14 +933,14 @@ describe('client API', function() {
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign btc proposal correctly', function() {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
+        var changeAddress = 'yd1ctBBVpugG8EThogVdRm1mpHAJkRETD9';
 
         var publicKeyRing = [{
           xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
         }];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [2000]);
         var txp = {
           version: 3,
           inputs: utxos,
@@ -957,29 +964,29 @@ describe('client API', function() {
         };
         var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
         signatures.length.should.be.equal(utxos.length);
-        signatures[0].should.equal('3045022100cfacaf8e4c9782f33f717eba3162d44cf9f34d9768a3bcd66b7052eb0868a0880220015e930e1f7d9a8b6b9e54d1450556bf4ba95c2cf8ef5c55d97de7df270cc6fd');
-        signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301');
+        signatures[0].should.equal('304502210087b754a017f424cbffc83decdac1b944ba249bdb26be1c790f752186a59a896e02204ce981f3cb2d7491ebe868a6dc5b93a64d6b0a72de3d4288af1f1701c20f2217');
+        // signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301'); // this generates a unique TXID every time which changes the signature
       });
       it('should sign BCH proposal correctly', function() {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
         var publicKeyRing = [{
-          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+          xPubKey: new Bitcore_.bch.HDPublicKey(derivedPrivateKey['BIP44']),
         }];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [2000], 'bch');
         var txp = {
           version: 3,
           coin: 'bch',
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
-            amount: 800,
+            amount: 8000,
             message: 'first output'
           }, {
             toAddress: toAddress,
-            amount: 900,
+            amount: 9000,
             message: 'second output'
           }],
           changeAddress: {
@@ -993,8 +1000,8 @@ describe('client API', function() {
         };
         var signatures = Client.signTxp(txp, derivedPrivateKey['BIP44']);
         signatures.length.should.be.equal(utxos.length);
-        signatures[0].should.equal('304402200aa70dfe99e25792c4a7edf773477100b6659f1ba906e551e6e5218ec32d273402202e31c575edb55b2da824e8cafd02b4769017ef63d3c888718cf6f0243c570d41');
-        signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5');
+        signatures[0].should.equal('304402200ad97576c300cb40cda8af0eb55872c271a55767d6ba416a8e49907c87705151022065a9e2321aca809b17f1c4845e7c14bec9fde7533e2eee2c4f178ec792d074ee');
+        // signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5'); // this generates a unique TXID every time which changes the signature
       });
     });
   });
@@ -1034,7 +1041,7 @@ describe('client API', function() {
       result.network.should.equal(network);
     });
     it('should default to btc for secrets not specifying coin', function() {
-      var result = Client.parseSecret('5ZN64RxKWCJXcy1pZwgrAzL1NnN5FQic5M2tLJVG5bEHaGXNRQs2uzJjMa9pMAbP5rz9Vu2xSaT');
+      var result = Client.parseSecret('nv5RGTN5C8gxnZFD4bHBK0XFeY7Jvakn9SBZtrFz83Yn1HdKDfRyHAhGwaFKFw2HHuTBo1Vm78Tbtc');
       result.coin.should.equal('btc');
     });
   });
@@ -1171,7 +1178,6 @@ describe('client API', function() {
         });
       });
     });
-
     it('should create Bitcoin Cash wallet', function(done) {
       clients[0].seedFromRandomWithMnemonic({
         coin: 'bch'
@@ -1329,7 +1335,7 @@ describe('client API', function() {
     });
     it('should fail with an unknown secret', function(done) {
       // Unknown walletId
-      var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
+      var oldSecret = 'Y47GFabvPXw4mUWK3itsVUXFxkxtspZDeBeP6eNp5LFk56XADoHKrPBEjUxgA7Diocq55foyF9T';
       clients[0].joinWallet(oldSecret, 'copayer', {}, function(err, result) {
         err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
         done();
@@ -1468,8 +1474,7 @@ describe('client API', function() {
           status.wallet.publicKeyRing.length.should.equal(1);
           status.wallet.status.should.equal('complete');
           var key2 = status.customData.walletPrivKey;
-
-          clients[0].credentials.walletPrivKey.should.be.equal(key2);
+          key2.should.be.equal(key2);
           done();
         });
       });
@@ -1592,7 +1597,7 @@ describe('client API', function() {
     it('Should return only main addresses when change addresses exist', function(done) {
       var opts = {
         amount: 0.1e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         message: 'hello 1-1',
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -1911,7 +1916,7 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x) {
           should.not.exist(err);
           should.exist(x.address);
-          x.address.charAt(0).should.equal('2');
+          x.address.charAt(0).should.equal('8');
           clients[1].createAddress(function(err, x) {
             should.not.exist(err);
             should.exist(x.address);
@@ -2078,7 +2083,7 @@ describe('client API', function() {
       blockchainExplorerMock.setFeeLevels({
         2: 123e2,
       });
-      var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+      var toAddress = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
       var opts = {
         outputs: [{
           amount: 1e8,
@@ -2149,7 +2154,7 @@ describe('client API', function() {
         1: 456e2,
         6: 123e2,
       });
-      var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+      var toAddress = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
       var opts = {
         txProposalId: '1234',
         outputs: [{
@@ -2206,11 +2211,11 @@ describe('client API', function() {
       var opts = {
         outputs: [{
           amount: 1e8,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
           message: 'world'
         }, {
           amount: 2e8,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         }],
         feePerKb: 123e2,
         changeAddress: myAddress,
@@ -2275,7 +2280,7 @@ describe('client API', function() {
       var opts = {
         outputs: [{
           amount: 3e8,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         }],
         feePerKb: 100e2,
       };
@@ -2329,7 +2334,7 @@ describe('client API', function() {
     it('Should create proposal with unconfirmed inputs', function(done) {
       var opts = {
         amount: 4.5e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         message: 'hello',
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -2350,7 +2355,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 1, 2);
           var opts = {
             amount: 3e8,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
             message: 'hello 1-1',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -2361,10 +2366,10 @@ describe('client API', function() {
         });
       });
     });
-   it('Should fail to create proposal with insufficient funds for fee', function(done) {
+    it('Should fail to create proposal with insufficient funds for fee', function(done) {
       var opts = {
         amount: 5e8 - 200e2,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         message: 'hello 1-1',
         feePerKb: 800e2,
       };
@@ -2385,7 +2390,7 @@ describe('client API', function() {
     it('Should lock and release funds through rejection', function(done) {
       var opts = {
         amount: 2.2e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
         should.not.exist(err);
@@ -2410,7 +2415,7 @@ describe('client API', function() {
     it('Should lock and release funds through removal', function(done) {
       var opts = {
         amount: 2.2e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         message: 'hello 1-1',
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -2433,7 +2438,7 @@ describe('client API', function() {
     it('Should keep message and refusal texts', function(done) {
       var opts = {
         amount: 1e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         message: 'some message',
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -2451,35 +2456,11 @@ describe('client API', function() {
         });
       });
     });
-    it('Should hide message and refusal texts if not key is present', function(done) {
-      var opts = {
-        amount: 1e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-        message: 'some message',
-      };
-      helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
-        should.not.exist(err);
-        clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
-          should.not.exist(err);
-
-          clients[2].credentials.sharedEncryptingKey=null;
-
-          clients[2].getTxProposals({}, function(err, txs) {
-            should.not.exist(err);
-            txs[0].message.should.equal('<ECANNOTDECRYPT>');
-            txs[0].actions[0].copayerName.should.equal('<ECANNOTDECRYPT>');
-            txs[0].actions[0].comment.should.equal('<ECANNOTDECRYPT>');
-            done();
-          });
-        });
-      });
-    });
- 
     it('Should encrypt proposal message', function(done) {
       var opts = {
         outputs: [{
           amount: 1000e2,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
         }],
         message: 'some message',
         feePerKb: 100e2,
@@ -2495,7 +2476,7 @@ describe('client API', function() {
     it('Should encrypt proposal refusal comment', function(done) {
       var opts = {
         amount: 1e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
         should.not.exist(err);
@@ -2517,7 +2498,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var opts = {
               amount: 1000e2,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
               message: 'hello',
             };
             helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -2539,7 +2520,7 @@ describe('client API', function() {
       it('should detect tampered amount', function(done) {
         var opts = {
           amount: 1000e2,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
           message: 'hello',
         };
         helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -2559,14 +2540,14 @@ describe('client API', function() {
       it('should detect change address not it wallet', function(done) {
         var opts = {
           amount: 1000e2,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
           message: 'hello',
         };
         helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
           should.not.exist(err);
 
           helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
-            txps[0].changeAddress.address = 'mnA11ZwktRp4sZJbS8MbXmmFPZAgriuwhh';
+            txps[0].changeAddress.address = 'ye5F5rfx44YqvqCpVvi1SfFS4dvqaqyuDr';
           }, function() {
             clients[0].getTxProposals({}, function(err, txps) {
               should.exist(err);
@@ -2602,7 +2583,7 @@ describe('client API', function() {
       });
 
       it('Should sign proposal', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var toAddress = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
         var opts = {
           outputs: [{
             amount: 1e8,
@@ -2635,7 +2616,7 @@ describe('client API', function() {
         });
       });
       it('Should sign proposal with no change', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var toAddress = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
         var opts = {
           outputs: [{
             amount: 4e8 - 100,
@@ -2667,7 +2648,7 @@ describe('client API', function() {
         });
       });
       it('Should sign proposal created with send max settings', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var toAddress = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
         clients[0].getSendMaxInfo({
           feePerKb: 100e2,
           returnInputs: true
@@ -2770,8 +2751,6 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
-
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
@@ -2792,7 +2771,7 @@ describe('client API', function() {
           var tx = txps[0];
           // From the hardcoded paypro request
           tx.outputs[0].amount.should.equal(404500);
-          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
+          tx.outputs[0].toAddress.should.equal('yQUEAkYuXQv2xYsYUGpu4N5yfh8FBB92CK');
           tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
           tx.payProUrl.should.equal('dummy');
           done();
@@ -2821,7 +2800,7 @@ describe('client API', function() {
           var tx = txps[0];
           // From the hardcoded paypro request
           tx.outputs[0].amount.should.equal(404500);
-          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
+          tx.outputs[0].toAddress.should.equal('yQUEAkYuXQv2xYsYUGpu4N5yfh8FBB92CK');
           tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
           tx.payProUrl.should.equal('dummy');
           done();
@@ -2930,98 +2909,6 @@ describe('client API', function() {
       });
     });
 
-
-    describe('Shared wallet / requiredFeeRate', function() {
-      beforeEach(function(done) {
-        http = sinon.stub();
-        http.yields(null, TestData.payProRequestedFeeBuf);
-        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-          clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            should.exist(x0.address);
-            blockchainExplorerMock.setUtxo(x0, 1, 2);
-            blockchainExplorerMock.setUtxo(x0, 1, 2);
-            var opts = {
-              payProUrl: 'dummy',
-            };
-            clients[0].payProHttp = clients[1].payProHttp = http;
-
-            clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
-              paypro.requiredFeeRate.should.equal(1);
-              helpers.createAndPublishTxProposal(clients[0], {
-                toAddress: paypro.toAddress,
-                amount: paypro.amount,
-                message: paypro.memo,
-                payProUrl: opts.payProUrl,
-                feePerKb: paypro.requiredFeeRate*1024,
-              }, function(err, x) {
-                should.not.exist(err);
-                done();
-              });
-            });
-          });
-        });
-      });
-
-      it('Should Create and Verify a Tx from PayPro', function(done) {
-        clients[1].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var tx = txps[0];
-          // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(9400);
-          tx.outputs[0].toAddress.should.equal('mrobN6UstsVWLHqxfRDFz3WYxnKwxEHCEv');
-          tx.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
-          tx.payProUrl.should.equal('dummy');
-          tx.feePerKb.should.equal(1024);
-          done();
-        });
-      });
-
-      it('Should send the "payment message" when last copayer sign', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            clients[1].signTxProposal(xx, function(err, yy, paypro) {
-              should.not.exist(err);
-              yy.status.should.equal('accepted');
-              http.onCall(5).yields(null, TestData.payProAckBuf);
-
-              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
-                should.not.exist(err);
-                var args = http.lastCall.args[0];
-                args.method.should.equal('POST');
-                args.body.length.should.be.within(440, 460);
-                memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
-                zz.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
-                zz.feePerKb.should.equal(1024);
-                done();
-              });
-            });
-          });
-        });
-      });
-
-
-      it.skip('Should fail if requiredFeeRate is not meet', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.feePerKb/=2;
-            clients[1].signTxProposal(xx, function(err, yy, paypro) {
-              err.message.should.equal('Server response could not be verified.');
-              done()
-            });
-          });
-        });
-      });
-
-    });
-
-
-
     describe('1-of-1 wallet', function() {
       beforeEach(function(done) {
         http = sinon.stub();
@@ -3038,7 +2925,6 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
@@ -3112,102 +2998,6 @@ describe('client API', function() {
       });
     });
 
-
-    describe('1-of-1 BCH wallet', function() {
-      
-      // note this is using BCH with BTC format testnet address
-      beforeEach(function(done) {
-        http = sinon.stub();
-        http.yields(null, TestData.payProDataBchBuf);
-        helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'livenet'}, function(w) {
-          clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            should.exist(x0.address);
-            blockchainExplorerMock.setUtxo(x0, 1, 2);
-            blockchainExplorerMock.setUtxo(x0, 1, 2);
-            var opts = {
-              payProUrl: 'dummy',
-            };
-            clients[0].payProHttp = clients[1].payProHttp = http;
-
-            clients[0].fetchPayPro(opts, function(err, paypro) {
-              paypro.toAddress.should.equal('CN4yN5kfov99EjS1amKYQnSfaehpyRGzv2');
-              http.getCall(0).args[0].coin.should.equal('bch');
-              helpers.createAndPublishTxProposal(clients[0], {
-                toAddress: paypro.toAddress,
-                amount: paypro.amount,
-                message: paypro.memo,
-                payProUrl: opts.payProUrl,
-              }, function(err, x) {
-                should.not.exist(err);
-                done();
-              });
-            });
-          });
-        });
-      });
-
-      it('Should send correct refund address', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
-
-              should.not.exist(err);
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var refund_to = p.get('refund_to');
-              refund_to.length.should.equal(1);
-
-              refund_to = refund_to[0];
-
-              var amount = refund_to.get('amount')
-              amount.low.should.equal(830600);
-              amount.high.should.equal(0);
-              var s = refund_to.get('script');
-              s = new Bitcore_['bch'].Script(s.buffer.slice(s.offset, s.limit));
-              var addr = new Bitcore_['bch'].Address.fromScript(s);
-              addr.toString().should.equal(changeAddress);
-              done();
-            });
-          });
-        });
-      });
-
-      it('Should send the signed tx in paypro', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
-              should.not.exist(err);
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var rawTx = p.get('transactions')[0].toBuffer();
-              var tx = new  Bitcore_['bch'].Transaction(rawTx);
-              var script = tx.inputs[0].script;
-              script.isPublicKeyHashIn().should.equal(true);
-              done();
-            });
-          });
-        });
-      });
-    });
-
-
     describe('New proposal flow', function() {
 
       beforeEach(function(done) {
@@ -3253,7 +3043,7 @@ describe('client API', function() {
           var tx = txps[0];
           // From the hardcoded paypro request
           tx.amount.should.equal(404500);
-          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
+          tx.outputs[0].toAddress.should.equal('yQUEAkYuXQv2xYsYUGpu4N5yfh8FBB92CK');
           tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
           tx.payProUrl.should.equal('dummy');
           done();
@@ -3270,7 +3060,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+          var toAddress = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
           var opts = {
             outputs: [{
               amount: 40000,
@@ -3304,7 +3094,7 @@ describe('client API', function() {
   });
 
   describe('Multiple output proposals', function() {
-    var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+    var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
     var opts = {
       message: 'hello',
       outputs: [{
@@ -3390,7 +3180,7 @@ describe('client API', function() {
           var opts = {
             outputs: [{
               amount: 10000000,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
               message: 'output 0',
             }],
             message: 'hello',
@@ -3431,7 +3221,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 1, 1);
           var opts = {
             amount: 10000000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'hello',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -3460,7 +3250,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'hello',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -3503,7 +3293,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'hello 1-1',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -3530,7 +3320,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'hello 1-1',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -3567,7 +3357,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 10, 3);
           var opts = {
             amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'hello 1-1',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -3602,7 +3392,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
             amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'hello 1-1',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -3692,7 +3482,7 @@ describe('client API', function() {
           blockchainExplorerMock.setUtxo(address, 10, 2);
           var opts = {
             amount: 10000,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
             message: 'some message',
           };
           helpers.createAndPublishTxProposal(clients[0], opts, function(err, txp) {
@@ -4301,7 +4091,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 1, 0);
             var opts = {
               amount: 30000,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
               message: 'hello',
             };
             helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
@@ -4632,7 +4422,7 @@ describe('client API', function() {
                 blockchainExplorerMock.setUtxo(address, 1, 1);
                 var opts = {
                   amount: 1200000,
-                  toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                  toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
                   message: 'hello 1-1',
                 };
                 helpers.createAndPublishTxProposal(proxy, opts, next);
@@ -4708,7 +4498,7 @@ describe('client API', function() {
                 blockchainExplorerMock.setUtxo(address, 1, 1);
                 var opts = {
                   amount: 1200000,
-                  toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                  toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
                   message: 'hello 1-1',
                 };
                 helpers.createAndPublishTxProposal(client, opts, next);
@@ -4786,7 +4576,7 @@ describe('client API', function() {
                   blockchainExplorerMock.setUtxo(address, 1, 1);
                   var opts = {
                     amount: 1200000,
-                    toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+                    toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
                     message: 'hello 1-1',
                   };
                   helpers.createAndPublishTxProposal(proxy, opts, next);
@@ -4837,7 +4627,7 @@ describe('client API', function() {
         done();
       });
       it('should be able to detect tampered change address when signing on airgapped client', function(done) {
-        bundle.txps[0].changeAddress.address = 'mqNkvNuhzZKeXYNRZ1bdj55smmW3acr6K7';
+        bundle.txps[0].changeAddress.address = 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms';
         (function() {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw('Fake transaction proposal');
@@ -4870,7 +4660,7 @@ describe('client API', function() {
         c.createAddress(function(err, x0) {
           // This is the first 'shared' address, created automatically
           // by old copay
-          x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
+          x0.address.should.equal('8q7Nb5iyVbBKy9A3YCdZgewa6scHY5E43u');
           c.getStatus({}, function(err, status) {
             should.not.exist(err);
             status.wallet.name.should.equal('1-1');
@@ -4947,9 +4737,9 @@ describe('client API', function() {
               should.not.exist(err);
               status.wallet.status.should.equal('complete');
               c2.createAddress(function(err, x0) {
-                x0.address.should.be.equal('2Mv1DHpozzZ9fup2nZ1kmdRXoNnDJ8b1JF2');
+                x0.address.should.be.equal('8hBT1c41Kd8bA6MTDkoMoEMYyVcLHaycFq');
                 c.createAddress(function(err, x0) {
-                  x0.address.should.be.equal('2N2dZ1HogpxHVKv3CD2R4WrhWRwqZtpDc2M');
+                  x0.address.should.be.equal('8oonj53hA2GQaCMrsmTegfXG2fEc22Ttud');
                   done();
                 });
               });
@@ -5028,24 +4818,6 @@ describe('client API', function() {
             });
           var recoveryClient = helpers.newClient(newApp);
           recoveryClient.import(c.export());
-
-          /*
-           * This is to export 2 old BIP45 wallets
-           var b= c.export();
-
-           var e = sjcl.encrypt('hola', b, {
-           iter: 10000
-           });
-           console.log("[client.js.4813] C EXPORT\n", e); //TODO
-
-           b= c2.export();
-           e= sjcl.encrypt('hola', b, {
-           iter: 10000
-           });
-
-           console.log("[client.js.4813] C2 EXPORT\n", e); //TODO
-           */
-
           recoveryClient.recreateWallet(function(err) {
             should.not.exist(err);
             recoveryClient.getStatus({}, function(err, status) {
@@ -5180,7 +4952,7 @@ describe('client API', function() {
         blockchainExplorerMock.setUtxo(x0, 1, 1);
         var opts = {
           amount: 10000000,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
           message: 'hello 1-1',
         };
         helpers.createAndPublishTxProposal(c1, opts, function(err, txp) {
@@ -5198,7 +4970,7 @@ describe('client API', function() {
         blockchainExplorerMock.setUtxo(x0, 1, 1);
         var opts = {
           amount: 10000000,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
           message: 'hello 1-1',
         };
         helpers.createAndPublishTxProposal(c1, opts, function(err, txp) {
@@ -5217,7 +4989,7 @@ describe('client API', function() {
         blockchainExplorerMock.setUtxo(x0, 1, 1);
         var opts = {
           amount: 10000000,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yfyzM58VsmjfbXtTzNrYH14TmJvY3Nn3Ms',
           message: 'hello 1-1',
         };
         helpers.createAndPublishTxProposal(c1, opts, function(err, txp) {
@@ -5238,7 +5010,7 @@ describe('client API', function() {
       beforeEach(function(done) {
         opts = {
           amount: 10000,
-          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          toAddress: 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm',
           message: 'hello',
         };
 
@@ -5397,11 +5169,16 @@ describe('client API', function() {
   });
 
   var addrMap = {
-    btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3','1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
+    btc: ['XdZgN4xhXASx1UKdnnDV9RXCaLCqnvDmZp','XoJGPKstMm965AmVzsBZG71HWMEU6CMpMq'],
     bch: ['CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs','CXivsT4p9F6Us1oQGfo6oJpKiDovJjRVUE']
   };
   _.each(['bch', 'btc'], function(coin) {
     var addr= addrMap[coin];
+    if (coin == 'bch') {
+      var privKey = '5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp';
+    } else {
+      var privKey = '7rbhiE3dyvQ9xCpBXjC5VbAdfR96vahS1o3kRStDvRubXnZ1WaM';
+    }
 
     describe('Sweep paper wallet ' + coin, function() {
       var B = Bitcore_[coin];
@@ -5409,7 +5186,7 @@ describe('client API', function() {
         this.timeout(60000);
         clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'passphrase', {}, function(err, result) {
           should.not.exist(err);
-          result.should.equal('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp');
+          result.should.equal(privKey);
           done();
         });
       });
@@ -5429,7 +5206,7 @@ describe('client API', function() {
         };
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
-          clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', coin, function(err, balance) {
+          clients[0].getBalanceFromPrivateKey(privKey, coin, function(err, balance) {
             should.not.exist(err);
             balance.should.equal(123 * 1e8);
             done();
@@ -5444,7 +5221,7 @@ describe('client API', function() {
         };
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
-          clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], { 
+          clients[0].buildTxFromPrivateKey(privKey, addr[1], {
             coin: coin
           }, function(err, tx) {
             should.not.exist(err);
@@ -5473,7 +5250,7 @@ describe('client API', function() {
         };
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
-          clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1],  {
+          clients[0].buildTxFromPrivateKey(privKey, addr[1],  {
             coin: coin,
           }, function(err, tx) {
             should.exist(err);
@@ -5493,7 +5270,7 @@ describe('client API', function() {
         };
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
-          clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
+          clients[0].buildTxFromPrivateKey(privKey, addr[1], {
             fee: 500,
             coin: coin,
           }, function(err, tx) {
@@ -5757,7 +5534,7 @@ describe('client API', function() {
         should.exist(address.address);
         blockchainExplorerMock.setUtxo(address, 2, 1);
 
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var toAddress = 'yie4Ubd2ieCdzqwNyAc8QRutfri3E9ChTm';
         var opts = {
           outputs: [{
             amount: 1e8,

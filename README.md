@@ -1,16 +1,16 @@
-# bitcore-wallet-client-alarmx
+# Bitcore-Alarmx Wallet Client
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-client)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client)
 
-The *official* client library for [bitcore-wallet-service-alarmx](https://github.com/alarmxcore/bitcore-wallet-service-alarmx).
+The *official* client library for [bitcore-wallet-service-alarmx] (https://github.com/alarmxcore/bitcore-wallet-service-alarmx).
 
 ## Description
 
-This package communicates with BWS [Bitcore wallet service](https://github.com/alarmxcore/bitcore-wallet-service-alarmx) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
+This package communicates with BWS [bitcore-alarmx wallet service](https://github.com/alarmxcore/bitcore-wallet-service-alarmx) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
 
-See [Bitcore-wallet](https://github.com/alarmxcore/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client-alarmx.
+See [bitcore-wallet-alarmx] (https://github.com/alarmxcore/bitcore-wallet-alarmx) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client-alarmx.
 
 ## Get Started
 
@@ -21,7 +21,7 @@ You can start using bitcore-wallet-client-alarmx in any of these two ways:
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/alarmxcore/bitcore-wallet-service-alarmx) instance. In this example we assume you have `bitcore-wallet-service-alarmx` running on your `localhost:3232`.
+Start your own local [bitcore-alarmx wallet service](https://github.com/alarmxcore/bitcore-wallet-service-alarmx) instance. In this example we assume you have `bitcore-wallet-service-alarmx` running on your `localhost:3232`.
 
 Then create two files `irene.js` and `tomas.js` with the content below:
 
@@ -32,7 +32,7 @@ var Client = require('bitcore-wallet-client-alarmx');
 
 
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'https://bws.alarmx.io/bws/api'
+var BWS_INSTANCE_URL = 'https://bws.dev.alarmx.io/bws/api'
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
@@ -58,7 +58,7 @@ var Client = require('bitcore-wallet-client-alarmx');
 
 
 var fs = require('fs');
-var BWS_INSTANCE_URL = 'https://bws.alarmx.io/bws/api'
+var BWS_INSTANCE_URL = 'https://bws.dev.alarmx.io/bws/api'
 
 var secret = process.argv[2];
 if (!secret) {
@@ -785,7 +785,7 @@ Returns exchange rate for the specified currency & timestamp.
 
 **opts.ts**: `Date`, A timestamp to base the rate on (default Date.now()).
 
-**opts.provider**: `String`, A provider of exchange rates (default 'BitPay').
+**opts.provider**: `String`, A provider of exchange rates (default 'alarmxcore').
 
 **Returns**: `Object`, rates - The exchange rate.
 

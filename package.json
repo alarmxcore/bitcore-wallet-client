@@ -2,22 +2,22 @@
   "name": "bitcore-wallet-client-alarmx",
   "description": "Client for bitcore-wallet-service-alarmx",
   "author": "BitPay Inc",
-  "version": "6.7.5",
+  "version": "6.6.4",
   "license": "MIT",
   "keywords": [
-    "bitcoin",
-    "copay",
+    "alarmx",
+    "copay-alarmx",
     "multisig",
     "wallet",
     "client",
-    "bitcore",
+    "bitcore-alarmx",
     "BWS",
     "BWC"
   ],
   "engine": "node >= 8.0.0",
   "main": "index.js",
   "repository": {
-    "url": "git@github.com:alarmxcore/bitcore-wallet-client-alarmx.git",
+    "url": "git@github.com/alarmxcore/bitcore-wallet-client-alarmx.git",
     "type": "git"
   },
   "bugs": {
@@ -26,10 +26,10 @@
   "dependencies": {
     "async": "^0.9.0",
     "bip38": "^1.3.0",
-    "bitcore-lib-alarmx": "git://github.com/alarmxcore/bitcore-lib-alarmx.git",
+    "bitcore-lib-alarmx": "alarmxcore/bitcore-lib-alarmx",
     "bitcore-lib-cash": "^0.16.1",
-    "bitcore-mnemonic-alarmx": "git://github.com/alarmxcore/bitcore-mnemonic-alarmx.git",
-    "bitcore-payment-protocol-alarmx": "git://github.com/alarmxcore/bitcore-payment-protocol-alarmx.git",
+    "bitcore-mnemonic-alarmx": "alarmxcore/bitcore-mnemonic-alarmx",
+    "bitcore-payment-protocol-alarmx": "alarmxcore/bitcore-payment-protocol-alarmx",
     "json-stable-stringify": "^1.0.0",
     "lodash": "^4.17.4",
     "preconditions": "^1.0.8",
@@ -37,7 +37,7 @@
     "superagent": "^3.4.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service-alarmx": "git://github.com/alarmxcore/bitcore-wallet-service-alarmx.git",
+    "bitcore-wallet-service-alarmx": "alarmxcore/bitcore-wallet-service-alarmx",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^2.11.2",
@@ -48,7 +48,7 @@
     "tingodb": "^0.3.4",
     "uglify": "^0.1.1",
     "uuid": "^2.0.1",
-    "grunt-jsdox": "matiu/grunt-jsdox#update/jsdoc-4.10"
+	"grunt-jsdox": "matiu/grunt-jsdox#update/jsdoc-4.10"
   },
   "scripts": {
     "start": "node app.js",
